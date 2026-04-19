@@ -63,3 +63,12 @@ outputs/**
 !Eaton_Fire/**/.gitkeep
 !Altadena_Images/README.md
 !Altadena_Images/**/.gitkeep
+
+# Hurricane Ian cross-view imagery and local metadata
+IAN_hurricane/**/*.jpg
+IAN_hurricane/**/*.jpeg
+IAN_hurricane/**/*.png
+IAN_hurricane/**/*.csv
+!IAN_hurricane/README.md
+!IAN_hurricane/README_CN.md
+!IAN_hurricane/**/.gitkeep

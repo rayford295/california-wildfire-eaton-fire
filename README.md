@@ -1,54 +1,79 @@
-# California Wildfire Eaton Fire
+# Multimodal Disaster Datasets
 
 [中文说明](./README_CN.md)
 
-This repository contains the code, documentation, and folder skeletons for a reproducible post-fire image analysis workflow built around the final Eaton Fire datasets used in this project.
+This repository contains the code, documentation, and folder skeletons for multiple local disaster-image datasets used in cross-view and post-disaster analysis.
 
-The GitHub repository is intentionally lightweight:
+The repository is intentionally lightweight:
 
-- code and documentation are versioned
-- raw images, raster tiles, and most generated outputs stay local
-- directory skeletons are preserved so the workflow can be rebuilt on another machine
+- code and documentation are versioned in GitHub
+- raw images, raster tiles, and large derived tables stay local
+- folder skeletons are preserved so the workflows can be recreated on another machine
 
-## Final datasets
+## Included datasets
 
-### 1. `Eaton_Fire/`
+### `Eaton_Fire/`
 
-The canonical labeled street-view dataset.
+The canonical labeled street-view dataset for the 2025 Eaton Fire.
 
-- organized by six damage classes
-- includes class-level point CSV exports
-- includes the master attachment index and summary CSV
-- final scale: 18,428 points and 19,780 image attachments
+- 18,428 inspection points
+- 19,780 image attachments
+- six damage classes
+- coordinates available through the exported point and attachment tables
 
 Detailed notes: [`Eaton_Fire/README.md`](./Eaton_Fire/README.md)
 
-### 2. `Altadena_Images/`
+### `Altadena_Images/`
 
-The paired sample-organized dataset derived from the Eaton Fire attachment index.
+The sample-organized paired dataset derived from the Eaton Fire attachment index.
 
-- one sample folder per attachment record
-- each sample can contain `street_view.jpg` and `remote_sensing.jpg`
-- includes pairing indexes and download logs
-- final scale: 19,780 sample folders, 19,746 complete pairs, 91 GeoTIFF tiles
+- 19,780 sample folders
+- 19,746 complete `street_view.jpg` plus `remote_sensing.jpg` pairs
+- 91 GeoTIFF tiles and 91 `.aux.xml` sidecars in the local raster source folder
+- coordinates retained in the generated paired index files
 
 Detailed notes: [`Altadena_Images/README.md`](./Altadena_Images/README.md)
 
-## Dataset summary
+### `IAN_hurricane/`
 
-The following totals come from the final `Eaton_Fire_summary.csv` snapshot.
+A Hurricane Ian cross-view dataset of paired satellite and street-view imagery.
 
-| Damage category | Points | Attachments |
-| --- | ---: | ---: |
-| Destroyed (>50%) | 9,419 | 9,490 |
-| Major (26-50%) | 70 | 155 |
-| Minor (10-25%) | 148 | 312 |
-| Affected (1-9%) | 858 | 1,809 |
-| Inaccessible | 40 | 33 |
-| No Damage | 7,893 | 7,981 |
-| Total | 18,428 | 19,780 |
+- 4,121 satellite/street-view pairs
+- 8,242 image files total
+- `train_split.csv` with 3,821 rows
+- `test_split.csv` with 300 rows
+- three damage severities: minor, moderate, and severe
+- no latitude/longitude columns in the provided local CSV files
 
-`points` are inspection locations, while `attachments` are image records linked to those locations, so the two counts are not expected to match.
+Detailed notes: [`IAN_hurricane/README.md`](./IAN_hurricane/README.md)
+
+## Quick summary
+
+| Dataset | Structure | Scale | Coordinates |
+| --- | --- | --- | --- |
+| `Eaton_Fire/` | class-organized street-view attachments | 18,428 points / 19,780 images | yes |
+| `Altadena_Images/` | sample-organized street-view plus remote-sensing pairs | 19,780 samples / 19,746 complete pairs | yes |
+| `IAN_hurricane/` | paired satellite plus street-view images | 4,121 pairs / 8,242 images | no |
+
+## Current code status
+
+The scripts in `scripts/` are still primarily written for the Eaton Fire and Altadena workflows.
+
+- `scripts/data_prep/parse_metadata.py` parses the labeled Eaton Fire dataset and indexes the paired Altadena sample folders
+- `scripts/data_prep/train_val_test_split.py` creates supervised splits for the Eaton Fire metadata
+- `scripts/features/extract_clip_embeddings.py` extracts CLIP embeddings for the Eaton Fire and Altadena workflows
+- `scripts/features/sample_raster_values.py` samples raster values at labeled Eaton Fire point locations
+- `scripts/visualization/` generates Eaton Fire quality-assurance outputs
+
+The Hurricane Ian dataset is now documented and reserved in the repository structure, but it is not yet wired into the current Eaton-specific preprocessing scripts because its schema is pair-based and the provided CSV files do not include coordinates.
+
+## Hurricane Ian source and attribution
+
+The `IAN_hurricane/` dataset should be attributed to the Hurricane Ian cross-view dataset described in:
+
+Li, H., Deuser, F., Yin, W., Luo, X., Walther, P., Mai, G., Huang, W., and Werner, M. (2025). *Cross-view geolocalization and disaster mapping with street-view and VHR satellite imagery: A case study of Hurricane IAN*. *ISPRS Journal of Photogrammetry and Remote Sensing*, 220, 841-854. [https://doi.org/10.1016/j.isprsjprs.2025.01.003](https://doi.org/10.1016/j.isprsjprs.2025.01.003)
+
+Based on the publication metadata, the paper introduces a novel Hurricane Ian cross-view dataset named `CVIAN` and reports that its data and code are publicly available through the related CVDisaster project.
 
 ## Repository layout
 
@@ -59,6 +84,7 @@ The following totals come from the final `Eaton_Fire_summary.csv` snapshot.
 |-- requirements.txt
 |-- Eaton_Fire/
 |-- Altadena_Images/
+|-- IAN_hurricane/
 |-- scripts/
 |   |-- data_prep/
 |   |-- features/
@@ -66,64 +92,6 @@ The following totals come from the final `Eaton_Fire_summary.csv` snapshot.
 |-- notebooks/
 |-- data/
 `-- outputs/
-```
-
-## Main scripts
-
-- `scripts/data_prep/parse_metadata.py`: parse labeled Eaton Fire files and index paired sample folders
-- `scripts/data_prep/train_val_test_split.py`: create supervised train, validation, and test splits
-- `scripts/features/extract_clip_embeddings.py`: extract CLIP embeddings for labeled and paired samples
-- `scripts/features/sample_raster_values.py`: sample raster values at street-view point locations
-- `scripts/visualization/map_damage_points.py`: build an interactive damage map
-- `scripts/visualization/sample_grid.py`: export sample image grids for QA
-
-## Typical workflow
-
-### 1. Install dependencies
-
-```bash
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pip install -r Altadena_Images/requirements.txt
-```
-
-### 2. Parse metadata
-
-```bash
-python scripts/data_prep/parse_metadata.py --root .
-```
-
-Outputs:
-
-- `data/eaton_fire_metadata.csv`
-- `data/eaton_fire_points.geojson`
-- `data/altadena_unlabeled_index.csv`
-
-### 3. Build train/validation/test splits
-
-```bash
-python scripts/data_prep/train_val_test_split.py --root .
-```
-
-### 4. Extract CLIP features
-
-```bash
-python scripts/features/extract_clip_embeddings.py --root . --split labeled
-python scripts/features/extract_clip_embeddings.py --root . --split unlabeled
-```
-
-### 5. Add raster features when needed
-
-```bash
-python scripts/features/sample_raster_values.py --root . --raster /path/to/dNBR.tif --band_name dNBR
-```
-
-### 6. Generate QA visualizations
-
-```bash
-python scripts/visualization/map_damage_points.py --root .
-python scripts/visualization/sample_grid.py --root . --n 6
 ```
 
 ## Versioning policy
@@ -137,14 +105,16 @@ Versioned in GitHub:
 
 Kept local and ignored by Git:
 
-- raw street-view images
-- raster tiles and pairing outputs
+- raw street-view, satellite, and remote-sensing images
+- local CSV exports and split files
 - generated feature arrays and metadata tables
 - generated maps, figures, and reports
 - virtual environments and archive files
 
-## Notes
+## Suggested future repo name
 
-- `Eaton_Fire/` is the authoritative labeled dataset for this project.
-- `Altadena_Images/` is the authoritative paired sample dataset built from the same attachment index.
-- The current code uses the name `unlabeled` for the paired split, but that is only a workflow label inside scripts.
+Because the repository now spans both wildfire and hurricane datasets, a clearer future GitHub name would be something like:
+
+- `multimodal-disaster-datasets`
+- `disaster-crossview-datasets`
+- `disaster-vision-datasets`

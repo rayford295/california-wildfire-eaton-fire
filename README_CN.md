@@ -1,54 +1,79 @@
-# California Wildfire Eaton Fire
+# 多灾种灾害影像数据集
 
 [English README](./README.md)
 
-这个仓库保存的是 Eaton Fire 项目的代码、文档和目录骨架，用来支持一个可复现的灾后图像分析流程。真正的大体量数据，例如原始街景图片、遥感瓦片和大部分生成结果，默认都保留在本地，不直接上传到 GitHub。
+这个仓库保存的是多个本地灾害影像数据集对应的代码、文档和目录骨架，主要用于 cross-view 和灾后分析相关研究。
 
-这个仓库的原则是：
+仓库目前遵循轻量化原则：
 
 - GitHub 里保留代码和文档
-- 原始数据与大文件留在本地
-- 通过保留目录骨架，方便在另一台机器上复现同样的流程
+- 原始图片、遥感瓦片和大体量派生结果保留在本地
+- 通过保留目录骨架，方便在别的机器上复现同样的流程
 
-## 最终数据集
+## 当前纳入仓库的数据集
 
-### 1. `Eaton_Fire/`
+### `Eaton_Fire/`
 
-这是项目中的权威标注数据集，也是后续监督学习和统计分析的基础。
+这是 2025 年 Eaton Fire 的权威标注街景数据集。
 
-- 按 6 个损毁等级分类存放
-- 包含每个类别的点位 CSV
-- 包含全量附件索引和汇总 CSV
-- 最终规模为 18,428 个 points，19,780 个 attachments
+- 18,428 个 inspection points
+- 19,780 张 image attachments
+- 6 个损毁等级
+- 点位表和附件表中都保留了坐标信息
 
 详细说明见：[`Eaton_Fire/README.md`](./Eaton_Fire/README.md)
 
-### 2. `Altadena_Images/`
+### `Altadena_Images/`
 
-这是基于 `Eaton_Fire_attachments_index.csv` 生成的配对数据集，按 sample 组织。
+这是基于 Eaton Fire 附件索引生成的 sample 级配对数据集。
 
-- 每个附件记录对应一个 `sample_xxxxx` 文件夹
-- 每个 sample 可以包含 `street_view.jpg` 和 `remote_sensing.jpg`
-- 同时保留配对索引表和下载日志
-- 最终规模为 19,780 个 sample 文件夹，19,746 个完整配对，91 个 GeoTIFF 瓦片
+- 19,780 个 sample 文件夹
+- 其中 19,746 个是完整的 `street_view.jpg` 和 `remote_sensing.jpg` 配对
+- 本地遥感源目录中有 91 个 GeoTIFF 和 91 个 `.aux.xml`
+- 生成的配对索引表中保留了坐标信息
 
 详细说明见：[`Altadena_Images/README.md`](./Altadena_Images/README.md)
 
-## 数据汇总
+### `IAN_hurricane/`
 
-下面的统计来自最终的 `Eaton_Fire_summary.csv`。
+这是 Hurricane Ian 的 cross-view 配对数据集，包含卫星图和街景图。
 
-| 损毁类别 | Points | Attachments |
-| --- | ---: | ---: |
-| Destroyed (>50%) | 9,419 | 9,490 |
-| Major (26-50%) | 70 | 155 |
-| Minor (10-25%) | 148 | 312 |
-| Affected (1-9%) | 858 | 1,809 |
-| Inaccessible | 40 | 33 |
-| No Damage | 7,893 | 7,981 |
-| Total | 18,428 | 19,780 |
+- 4,121 对 satellite/street-view pairs
+- 共 8,242 张图片
+- `train_split.csv` 有 3,821 行
+- `test_split.csv` 有 300 行
+- 3 个损毁等级：minor、moderate、severe
+- 你现在这份本地 CSV 里没有纬度和经度字段
 
-这里的 `points` 表示受灾评估点位，`attachments` 表示与这些点位关联的图片附件，所以两者数量本来就不一定相同。
+详细说明见：[`IAN_hurricane/README_CN.md`](./IAN_hurricane/README_CN.md)
+
+## 快速对比
+
+| 数据集 | 组织方式 | 规模 | 是否有坐标 |
+| --- | --- | --- | --- |
+| `Eaton_Fire/` | 按类别组织的街景附件 | 18,428 points / 19,780 images | 有 |
+| `Altadena_Images/` | 按 sample 组织的街景 + 遥感配对 | 19,780 samples / 19,746 完整配对 | 有 |
+| `IAN_hurricane/` | 卫星图 + 街景图配对 | 4,121 pairs / 8,242 images | 没有 |
+
+## 当前代码状态
+
+目前 `scripts/` 里的代码仍然主要服务于 Eaton Fire 和 Altadena 工作流：
+
+- `scripts/data_prep/parse_metadata.py` 解析 Eaton Fire 标注数据，并索引 Altadena 的 sample 文件夹
+- `scripts/data_prep/train_val_test_split.py` 为 Eaton Fire 元数据生成训练/验证/测试划分
+- `scripts/features/extract_clip_embeddings.py` 为 Eaton Fire 和 Altadena 工作流提取 CLIP 特征
+- `scripts/features/sample_raster_values.py` 在 Eaton Fire 标注点位上采样遥感栅格值
+- `scripts/visualization/` 生成 Eaton Fire 的质检可视化结果
+
+Ian 数据集现在已经被纳入仓库文档和目录结构，但还没有接进现有的 Eaton 专用脚本流程。原因是它的表结构是 pair-based，而且你给的本地 CSV 不包含坐标字段。
+
+## Hurricane Ian 数据来源与引用
+
+`IAN_hurricane/` 这个数据集建议标注为以下论文来源：
+
+Li, H., Deuser, F., Yin, W., Luo, X., Walther, P., Mai, G., Huang, W., and Werner, M. (2025). *Cross-view geolocalization and disaster mapping with street-view and VHR satellite imagery: A case study of Hurricane IAN*. *ISPRS Journal of Photogrammetry and Remote Sensing*, 220, 841-854. [https://doi.org/10.1016/j.isprsjprs.2025.01.003](https://doi.org/10.1016/j.isprsjprs.2025.01.003)
+
+根据该论文公开的元数据说明，作者在论文中构建了一个新的 Hurricane Ian cross-view 数据集 `CVIAN`，并说明相关数据与代码与 CVDisaster 项目关联公开。
 
 ## 仓库结构
 
@@ -59,6 +84,7 @@
 |-- requirements.txt
 |-- Eaton_Fire/
 |-- Altadena_Images/
+|-- IAN_hurricane/
 |-- scripts/
 |   |-- data_prep/
 |   |-- features/
@@ -68,67 +94,9 @@
 `-- outputs/
 ```
 
-## 主要脚本
-
-- `scripts/data_prep/parse_metadata.py`：解析 `Eaton_Fire/` 中的标注数据，并索引 `Altadena_Images/` 中的 sample 文件夹
-- `scripts/data_prep/train_val_test_split.py`：生成训练集、验证集和测试集
-- `scripts/features/extract_clip_embeddings.py`：提取标注数据和 sample 数据的 CLIP 特征
-- `scripts/features/sample_raster_values.py`：在点位上采样遥感栅格特征
-- `scripts/visualization/map_damage_points.py`：生成交互式损毁地图
-- `scripts/visualization/sample_grid.py`：导出样本拼图，便于 QA 检查
-
-## 典型使用流程
-
-### 1. 安装依赖
-
-```bash
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pip install -r Altadena_Images/requirements.txt
-```
-
-### 2. 解析元数据
-
-```bash
-python scripts/data_prep/parse_metadata.py --root .
-```
-
-会生成：
-
-- `data/eaton_fire_metadata.csv`
-- `data/eaton_fire_points.geojson`
-- `data/altadena_unlabeled_index.csv`
-
-### 3. 生成数据划分
-
-```bash
-python scripts/data_prep/train_val_test_split.py --root .
-```
-
-### 4. 提取 CLIP 特征
-
-```bash
-python scripts/features/extract_clip_embeddings.py --root . --split labeled
-python scripts/features/extract_clip_embeddings.py --root . --split unlabeled
-```
-
-### 5. 按需加入遥感特征
-
-```bash
-python scripts/features/sample_raster_values.py --root . --raster /path/to/dNBR.tif --band_name dNBR
-```
-
-### 6. 生成质检可视化结果
-
-```bash
-python scripts/visualization/map_damage_points.py --root .
-python scripts/visualization/sample_grid.py --root . --n 6
-```
-
 ## 版本管理策略
 
-会提交到 GitHub 的内容：
+提交到 GitHub 的内容：
 
 - 源代码
 - notebooks
@@ -137,14 +105,16 @@ python scripts/visualization/sample_grid.py --root . --n 6
 
 只保留在本地、不提交的内容：
 
-- 原始街景图片
-- 遥感瓦片和配对输出
+- 原始街景图、卫星图和遥感图
+- 本地 CSV 导出和 split 文件
 - 生成的特征数组和元数据表
 - 生成的地图、图片和报告
 - 虚拟环境和压缩包
 
-## 备注
+## 推荐的新仓库名
 
-- `Eaton_Fire/` 是项目中最重要的标注数据集。
-- `Altadena_Images/` 是基于同一份附件索引构建的 sample 级配对数据集。
-- 代码里目前仍然把 paired split 叫做 `unlabeled`，这只是脚本里的工作流命名，不代表它没有源数据字段。
+因为这个仓库现在已经不只是 Eaton Fire，而是同时包含 wildfire 和 hurricane 数据，更合适的新名字可以考虑：
+
+- `multimodal-disaster-datasets`
+- `disaster-crossview-datasets`
+- `disaster-vision-datasets`
