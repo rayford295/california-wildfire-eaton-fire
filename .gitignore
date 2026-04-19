@@ -38,7 +38,7 @@ Eaton_Fire/**/*.tiff
 Eaton_Fire/**/*.csv
 Eaton_Fire/**/*.geojson
 
-# Raw unlabeled imagery, download outputs, and local indexes
+# Paired sample imagery, download outputs, and local indexes
 Altadena_Images/**/*.jpg
 Altadena_Images/**/*.jpeg
 Altadena_Images/**/*.png
@@ -53,12 +53,10 @@ Altadena_Images/Eaton_Fire_attachments_index_output/**
 # Generated project data products
 data/**
 !data/.gitkeep
-!data/README.md
 
 # Generated figures, maps, and reports
 outputs/**
 !outputs/.gitkeep
-!outputs/README.md
 
 # Keep repository skeletons for ignored data folders
 !Eaton_Fire/README.md
