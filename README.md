@@ -59,6 +59,26 @@ A bi-temporal street-view disaster dataset built from pre- and post-hurricane im
 
 Detailed notes: [`Bi-temporal_hurricane/README.md`](./Bi-temporal_hurricane/README.md)
 
+### `SAGINDisaster/`
+
+A paired remote-sensing / volunteered-ground-image disaster dataset currently
+available in the local workspace.
+
+- `2,080` remote-sensing images in `RSI/`
+- `2,080` ground-view images in `VGI/`
+- companion spreadsheet `SAGINDisaster_latlon.xlsx`
+- observed metadata fields:
+  - `ID`
+  - `Type`
+  - `Latitude`
+  - `Longitude`
+  - `Possible text description`
+
+Current local path example:
+
+- `C:/Users/yyang295/Desktop/SAGINDisaster/SAGINDisaster`
+- `C:/Users/yyang295/Desktop/SAGINDisaster/SAGINDisaster_latlon.xlsx`
+
 ## Quick summary
 
 | Dataset | Structure | Scale | Coordinates |
@@ -67,6 +87,7 @@ Detailed notes: [`Bi-temporal_hurricane/README.md`](./Bi-temporal_hurricane/READ
 | `Altadena_Images/` | sample-organized street-view plus remote-sensing pairs | 19,780 samples / 19,746 complete pairs | yes |
 | `IAN_hurricane/` | paired satellite plus street-view images | 4,121 pairs / 8,242 images | no |
 | `Bi-temporal_hurricane/` | paired pre/post street-view samples | 2,556 pairs / 5,112 images | yes |
+| `SAGINDisaster/` | paired remote-sensing plus volunteered ground images | 2,080 pairs / 4,160 images | yes |
 
 ## Current code status
 
@@ -97,6 +118,15 @@ The `Bi-temporal_hurricane/` dataset should be attributed to:
 Yang, Y., Zou, L., Zhou, B., Li, D., Lin, B., Abedin, J., and Yang, M. (2025). *Hyperlocal disaster damage assessment using bi-temporal street-view imagery and pre-trained vision models*. *Computers, Environment and Urban Systems*, 116, 102335. [https://doi.org/10.1016/j.compenvurbsys.2025.102335](https://doi.org/10.1016/j.compenvurbsys.2025.102335)
 
 According to the article, the dataset is based on pre- and post-disaster street-view image pairs collected before and after 2024 Hurricane Milton in Horseshoe Beach, Florida.
+
+## SAGINDisaster note
+
+`SAGINDisaster/` is currently documented as a local external benchmark candidate.
+Unlike the Eaton / Altadena workflow, it already exposes paired remote-sensing
+and ground-view image folders together with a spreadsheet containing explicit
+latitude / longitude coordinates and disaster-type metadata. That makes it a
+useful future benchmark for cross-dataset retrieval, transfer, or
+generalization experiments.
 ## Repository layout
 
 ```text
@@ -127,9 +157,71 @@ Versioned in GitHub:
 - folder skeletons and `.gitkeep` placeholders
 
 Kept local and ignored by Git:
-
 - raw street-view, satellite, and remote-sensing images
 - local CSV exports and split files
 - generated feature arrays and metadata tables
 - generated maps, figures, and reports
 - virtual environments and archive files
+
+### 8. Evaluate whether generation helps
+
+```bash
+python scripts/firebridge_eval_generator.py \
+  --generator-checkpoint "outputs/generator_controlnet/generator_best.pt" \
+  --split-csv "data/splits/altadena_objectid/test.csv" \
+  --localizer-checkpoint "outputs/localizer_baseline/localizer_best.pt" \
+  --triage-checkpoint "outputs/triage_crossview/triage_best.pt" \
+  --output-json "outputs/generator_eval.json"
+```
+
+### 9. Run the agentic pipeline
+
+```bash
+python scripts/firebridge_run_agentic.py \
+  --localizer-checkpoint "outputs/localizer_baseline/localizer_best.pt" \
+  --generator-checkpoint "outputs/generator_controlnet/generator_best.pt" \
+  --triage-checkpoint "outputs/triage_crossview/triage_best.pt" \
+  --split-csv "data/splits/altadena_objectid/test.csv" \
+  --query-index 0 \
+  --output-json "outputs/agentic_example.json"
+```
+
+### 10. Run a local smoke test
+
+```bash
+python scripts/firebridge_smoke_test.py \
+  --train-csv "data/splits/altadena_objectid/train.csv" \
+  --val-csv "data/splits/altadena_objectid/val.csv" \
+  --test-csv "data/splits/altadena_objectid/test.csv"
+```
+
+## Binary Triage Mapping
+
+The default operational binary mapping in this repo is:
+
+- `0`: `No Damage` + `Affected (1-9%)`
+- `1`: `Minor (10-25%)` + `Major (26-50%)` + `Destroyed (>50%)`
+- ignored by default: `Inaccessible`
+
+This mapping keeps the task close to a real response question: **does this property show actionable fire damage or not?**
+
+## Paper Planning Docs
+
+- [Current Status](./docs/current_status.md)
+- [Task Definitions](./docs/tasks.md)
+- [Experiment Plan](./docs/experiments.md)
+- [Immediate Next Experiments](./docs/next_experiments.md)
+- [Localizer Runbook](./docs/localizer_runbook.md)
+- [Experiment Tracker Template](./docs/experiment_tracker_template.csv)
+- [Agentic Pipeline](./docs/agentic_pipeline.md)
+- [Paper Blueprint](./docs/paper_blueprint.md)
+- [Progress Log](./docs/progress_log.md)
+- [Triage Conflict Workflow](./docs/triage_conflict_workflow.md)
+- [Improvement Roadmap](./docs/improvement_roadmap.md)
+
+## Notes
+
+- This repository's code and repository-authored documentation are licensed under Apache-2.0. The underlying datasets, imagery, and third-party source materials are not relicensed by this repository and remain subject to their own terms.
+- Raw imagery and large generated artifacts remain local and are ignored by Git.
+- The current models are meant to be solid baselines and scaffolding for a paper, not the final research claim.
+>>>>>>> 1c93b7e (Document local SAGINDisaster benchmark inventory)
